@@ -19,13 +19,22 @@ import { Answer } from './answers/entities/answer.entity';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get<string>('DATABASE_URL'),
-        entities: [User, Question, Answer],
-        synchronize: true, // Auto create table in dev mode
-        logging: true,
-      }),
+      useFactory: (configService: ConfigService) => {
+        const dbUrl = configService.get<string>('SUPABASE_POSTGRES_URL_NON_POOLING')?.replace(/"/g, '');
+        // Remove query parameters from URL to avoid overriding our SSL settings
+        const cleanUrl = dbUrl?.split('?')[0];
+
+        return {
+          type: 'postgres',
+          url: cleanUrl,
+          entities: [User, Question, Answer],
+          synchronize: true, // Auto create table in dev mode
+          logging: true,
+          ssl: {
+            rejectUnauthorized: false,
+          },
+        };
+      },
     }),
     AuthModule,
     UsersModule,
