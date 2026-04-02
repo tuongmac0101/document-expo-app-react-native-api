@@ -22,7 +22,7 @@ export class AuthController {
     const result = await this.authService.googleLogin(req);
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
     // Redirect with token in query param (for demo purposes, cookies or hash are better for security)
-    return res.redirect(`${frontendUrl}/auth-success?token=${result.access_token}`);
+    return res.redirect(`${frontendUrl}?token=${result.access_token}`);
   }
 }
 
