@@ -2,13 +2,17 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
+let cachedApp: any;
+
 async function bootstrap() {
+  if (cachedApp) return cachedApp;
+
   const app = await NestFactory.create(AppModule);
 
   // Enable CORS for frontend integration
   app.enableCors();
 
-  // Tiền tố API nếu bạn muốn (ví dụ: domain.com/api/...)
+  // Tiền tố API (Ví dụ: https://domain.com/api/...)
   app.setGlobalPrefix('api');
 
   // Apply Global Validation Pipe for DTOs (using class-validator)
@@ -20,13 +24,25 @@ async function bootstrap() {
     }),
   );
 
-  // Vercel deployment usually handles porting, local uses 3000
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+    await app.init();
+    cachedApp = app.getHttpAdapter().getInstance();
+    return cachedApp;
+  }
+
   const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);
-
-  await app.init(); // Quan trọng: Khởi tạo app mà không cần listen port cố định trên Vercel
-  return app.getHttpAdapter().getInstance();
+  return app;
 }
 
-bootstrap();
+// Chạy trực tiếp cho môi trường local (Development)
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  bootstrap();
+}
+
+// Export cho Vercel (Production)
+export default async (req: any, res: any) => {
+  const server = await bootstrap();
+  return server(req, res);
+};
