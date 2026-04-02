@@ -21,7 +21,7 @@ export class QuestionsController {
     const { id, email, name } = req.user;
     
     // Ensure the user exists in our local database for foreign key integrity
-    const user = await this.usersService.findOrCreate(id, email, name);
+    const user = await this.usersService.findOrCreate(email, name);
     
     return this.questionsService.create(createQuestionDto, user);
   }

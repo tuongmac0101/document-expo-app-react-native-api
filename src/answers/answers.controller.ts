@@ -1,9 +1,19 @@
-import { Body, Controller, Param, ParseUUIDPipe, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Req, UseGuards } from '@nestjs/common';
 import { AnswersService } from './answers.service';
 import { CreateAnswerDto } from './dto/create-answer.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { QuestionsService } from '../questions/questions.service';
 import { UsersService } from '../users/users.service';
+
+@Controller('answers')
+export class AnswersQueryController {
+  constructor(private readonly answersService: AnswersService) {}
+
+  @Get('top-contributor')
+  async getTopContributor() {
+    return this.answersService.getTopContributor();
+  }
+}
 
 @Controller('questions/:id/answers')
 export class AnswersController {
@@ -28,8 +38,16 @@ export class AnswersController {
 
     // Get or create responder info from JWT
     const { id, email, name } = req.user;
-    const author = await this.usersService.findOrCreate(id, email, name);
+    const author = await this.usersService.findOrCreate(email, name);
 
     return this.answersService.create(createAnswerDto.content, question, author);
+  }
+
+  /**
+   * Get all answers for a specific question
+   */
+  @Get()
+  async findAll(@Param('id', ParseUUIDPipe) questionId: string) {
+    return this.answersService.findByQuestion(questionId);
   }
 }

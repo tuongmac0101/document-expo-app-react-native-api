@@ -5,6 +5,9 @@ import { Answer } from '../../answers/entities/answer.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
+  @Column({ unique: true, nullable: true })
+  googleId: string;
+
   @Column({ unique: true })
   email: string;
 

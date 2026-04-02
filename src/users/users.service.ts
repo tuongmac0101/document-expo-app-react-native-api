@@ -14,12 +14,50 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { id } });
   }
 
-  async findOrCreate(id: string, email: string, name?: string, avatarUrl?: string): Promise<User> {
-    let user = await this.findById(id);
-    if (!user) {
-      user = this.usersRepository.create({ id, email, name, avatarUrl });
-      await this.usersRepository.save(user);
+  async findByEmail(email: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { email } });
+  }
+
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { googleId } });
+  }
+
+  async findOrCreate(email: string, name?: string, avatarUrl?: string, googleId?: string): Promise<User> {
+    // Luôn ưu tiên tìm theo email vì email là duy nhất
+    let user = await this.findByEmail(email);
+
+    if (user) {
+      // Nếu tìm thấy, cập nhật thông thông tin nếu cần
+      let updated = false;
+      if (googleId && !user.googleId) {
+        user.googleId = googleId;
+        updated = true;
+      }
+      if (avatarUrl && !user.avatarUrl) {
+        user.avatarUrl = avatarUrl;
+        updated = true;
+      }
+      if (updated) {
+        await this.usersRepository.save(user);
+      }
+    } else {
+      // Nếu không tìm thấy theo email, thử tìm theo googleId
+      if (googleId) {
+        user = await this.findByGoogleId(googleId);
+      }
+
+      if (!user) {
+        // Tạo mới User (ID sẽ tự động sinh bởi TypeORM là UUID)
+        user = this.usersRepository.create({ 
+          email, 
+          name, 
+          avatarUrl,
+          googleId: googleId || undefined
+        });
+        await this.usersRepository.save(user);
+      }
     }
+    
     return user;
   }
 }
