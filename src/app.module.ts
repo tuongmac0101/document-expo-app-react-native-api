@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { QuestionsModule } from './questions/questions.module';
 import { AnswersModule } from './answers/answers.module';
+import { SocketModule } from './socket/socket.module';
 import { User } from './users/entities/user.entity';
 import { Question } from './questions/entities/question.entity';
 import { Answer } from './answers/entities/answer.entity';
@@ -42,6 +43,7 @@ import { Answer } from './answers/entities/answer.entity';
     UsersModule,
     QuestionsModule,
     AnswersModule,
+    SocketModule,
   ],
   controllers: [AppController],
   providers: [AppService],

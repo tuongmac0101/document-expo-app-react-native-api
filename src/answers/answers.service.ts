@@ -5,11 +5,14 @@ import { Answer } from './entities/answer.entity';
 import { Question } from '../questions/entities/question.entity';
 import { User } from '../users/entities/user.entity';
 
+import { SocketGateway } from '../socket/socket.gateway';
+
 @Injectable()
 export class AnswersService {
   constructor(
     @InjectRepository(Answer)
     private answersRepository: Repository<Answer>,
+    private socketGateway: SocketGateway,
   ) {}
 
   async create(content: string, question: Question, user: User): Promise<Answer> {
@@ -18,7 +21,9 @@ export class AnswersService {
       question,
       author: user,
     });
-    return this.answersRepository.save(answer);
+    const savedAnswer = await this.answersRepository.save(answer);
+    this.socketGateway.emitNewAnswer(savedAnswer);
+    return savedAnswer;
   }
 
   /**

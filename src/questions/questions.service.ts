@@ -5,11 +5,14 @@ import { Question } from './entities/question.entity';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { User } from '../users/entities/user.entity';
 
+import { SocketGateway } from '../socket/socket.gateway';
+
 @Injectable()
 export class QuestionsService {
   constructor(
     @InjectRepository(Question)
     private questionsRepository: Repository<Question>,
+    private socketGateway: SocketGateway,
   ) {}
 
   /**
@@ -20,7 +23,9 @@ export class QuestionsService {
       ...createQuestionDto,
       author: user,
     });
-    return this.questionsRepository.save(question);
+    const savedQuestion = await this.questionsRepository.save(question);
+    this.socketGateway.emitNewQuestion(savedQuestion);
+    return savedQuestion;
   }
 
   /**
