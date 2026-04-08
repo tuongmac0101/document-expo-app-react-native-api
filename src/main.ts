@@ -28,12 +28,10 @@ async function bootstrap() {
   // Swagger Documentation Setup
   const config = new DocumentBuilder()
     .setTitle('WordFlow API Docs')
-    .setDescription('Tài liệu hướng dẫn sử dụng API cho cộng đồng WordFlow Q&A. Hỗ trợ hệ thống câu hỏi, trả lời và xác thực Google OAuth.')
+    .setDescription('Tài liệu hướng dẫn sử dụng API cho cộng đồng WordFlow Q&A. Hỗ trợ xác thực Google OAuth.')
     .setVersion('1.0')
     .addTag('auth', 'Hệ thống xác thực Google OAuth')
     .addTag('users', 'Quản lý thông tin người dùng')
-    .addTag('questions', 'Hệ thống câu hỏi cộng đồng')
-    .addTag('answers', 'Quản lý phản hồi và trả lời')
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
