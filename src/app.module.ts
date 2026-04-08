@@ -6,6 +6,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { User } from './users/entities/user.entity';
+import { SurveysModule } from './surveys/surveys.module';
+import { SurveyResult } from './surveys/entities/survey-result.entity';
+import { SurveyTemplate } from './surveys/entities/survey-template.entity';
 
 @Module({
   imports: [
@@ -25,7 +28,7 @@ import { User } from './users/entities/user.entity';
         return {
           type: 'postgres',
           url: cleanUrl,
-          entities: [User],
+          entities: [User, SurveyResult, SurveyTemplate],
           synchronize: true, // Auto create table in dev mode
           logging: true,
           ssl: {
@@ -36,6 +39,7 @@ import { User } from './users/entities/user.entity';
     }),
     AuthModule,
     UsersModule,
+    SurveysModule,
   ],
   controllers: [AppController],
   providers: [AppService],
