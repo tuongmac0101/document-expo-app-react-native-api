@@ -28,7 +28,6 @@ export class SurveysController {
 
   @Get('results')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
   async getAllResults() {
     return this.surveysService.getAllResults();
   }
@@ -42,7 +41,7 @@ export class SurveysController {
   async getResultDetail(@Param('id') id: string, @Req() req: any) {
     const result = await this.surveysService.getResultDetail(id);
     if (!result) return { message: 'Không tìm thấy kết quả' };
-    
+
     // Security: Only owner or admin can see
     if (result.user.id !== req.user.id && req.user.role !== UserRole.ADMIN) {
       return { message: 'Bạn không có quyền xem kết quả này' };
