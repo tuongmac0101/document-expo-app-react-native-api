@@ -68,21 +68,29 @@ export class SurveysService {
   }
 
   async getAllResults(): Promise<SurveyResult[]> {
-    return this.surveyResultRepository.find({
+    const results = await this.surveyResultRepository.find({
       relations: ['user', 'template'],
       order: {
         createdAt: 'DESC',
       },
     });
+    return results.map(r => {
+      const { surveyData, ...rest } = r;
+      return rest as SurveyResult;
+    });
   }
 
   async getMyResults(userId: string): Promise<SurveyResult[]> {
-    return this.surveyResultRepository.find({
+    const results = await this.surveyResultRepository.find({
       where: { user: { id: userId } },
       relations: ['template'],
       order: {
         createdAt: 'DESC',
       },
+    });
+    return results.map(r => {
+      const { surveyData, ...rest } = r;
+      return rest as SurveyResult;
     });
   }
 
