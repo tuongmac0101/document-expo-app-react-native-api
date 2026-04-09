@@ -26,8 +26,17 @@ export class SurveysController {
     return this.surveysService.findAllTemplates(userId);
   }
 
+  @Get('summary')
+  async getSummary() {
+    return this.surveysService.getSummary();
+  }
+
+  @Get('user/:userId')
+  async getUserResults(@Param('userId') userId: string) {
+    return this.surveysService.getResultsByUserId(userId);
+  }
+
   @Get('results')
-  @UseGuards(RolesGuard)
   async getAllResults() {
     return this.surveysService.getAllResults();
   }

@@ -60,9 +60,9 @@ export class SurveysService {
   async submit(user: User, templateId: string, rawAnswers: any, timeTaken: number): Promise<SurveyResult> {
     // Check if already submitted
     const existing = await this.surveyResultRepository.findOne({
-      where: { 
+      where: {
         user: { id: user.id },
-        templateId 
+        templateId
       }
     });
 
@@ -83,10 +83,10 @@ export class SurveysService {
       let isCorrect = false;
 
       if (q.type === 'checkbox') {
-        isCorrect = Array.isArray(userAnswer) && 
-                    Array.isArray(q.correctAnswer) && 
-                    userAnswer.length === q.correctAnswer.length &&
-                    userAnswer.every(val => q.correctAnswer.includes(val));
+        isCorrect = Array.isArray(userAnswer) &&
+          Array.isArray(q.correctAnswer) &&
+          userAnswer.length === q.correctAnswer.length &&
+          userAnswer.every(val => q.correctAnswer.includes(val));
       } else {
         isCorrect = userAnswer === q.correctAnswer;
       }
@@ -117,20 +117,57 @@ export class SurveysService {
   }
 
   async getAllResults(): Promise<SurveyResult[]> {
-    const results = await this.surveyResultRepository.find({
+    return this.surveyResultRepository.find({
       relations: ['user', 'template'],
       order: {
         createdAt: 'DESC',
       },
     });
-    return results.map(r => {
-      const { surveyData, ...rest } = r;
-      if (rest.template) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { questions, ...tRest } = rest.template;
-        rest.template = tRest as SurveyTemplate;
+  }
+
+  async getSummary(): Promise<any[]> {
+    const results = await this.surveyResultRepository.find({
+      relations: ['user'],
+      select: ['id', 'score', 'createdAt', 'user'],
+    });
+
+    const groups: Record<string, any> = {};
+    results.forEach(r => {
+      const userId = r.user?.id;
+      if (!userId) return;
+
+      if (!groups[userId]) {
+        groups[userId] = {
+          user: r.user,
+          attemptsCount: 0,
+          totalScore: 0,
+          totalTime: 0,
+          lastActive: r.createdAt,
+        };
       }
-      return rest as SurveyResult;
+
+      groups[userId].attemptsCount++;
+      groups[userId].totalScore += r.score;
+      groups[userId].totalTime += (r.timeTaken || 0);
+      if (new Date(r.createdAt) > new Date(groups[userId].lastActive)) {
+        groups[userId].lastActive = r.createdAt;
+      }
+    });
+
+    return Object.values(groups).map((g: any) => ({
+      user: g.user,
+      attemptsCount: g.attemptsCount,
+      avgScore: Math.round(g.totalScore / g.attemptsCount),
+      avgTime: Math.round(g.totalTime / g.attemptsCount),
+      lastActive: g.lastActive,
+    }));
+  }
+
+  async getResultsByUserId(userId: string): Promise<SurveyResult[]> {
+    return this.surveyResultRepository.find({
+      where: { user: { id: userId } },
+      relations: ['template', 'user'],
+      order: { createdAt: 'DESC' },
     });
   }
 
