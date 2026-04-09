@@ -29,7 +29,20 @@ export class SurveysService {
       order: { createdAt: 'DESC' },
     });
 
-    if (!userId) return templates;
+    const safeTemplates = templates.map(t => {
+      // Create a shallow copy to avoid mutating the original object if cached
+      const templateCopy = { ...t };
+      if (templateCopy.questions && Array.isArray(templateCopy.questions)) {
+        templateCopy.questions = templateCopy.questions.map(q => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { correctAnswer, explanation, ...qRest } = q;
+          return qRest;
+        });
+      }
+      return templateCopy;
+    });
+
+    if (!userId) return safeTemplates;
 
     // Check completion status
     const submissions = await this.surveyResultRepository.find({
@@ -38,13 +51,13 @@ export class SurveysService {
     });
     const completedIds = new Set(submissions.map(s => s.templateId));
 
-    return templates.map(t => ({
+    return safeTemplates.map(t => ({
       ...t,
       isCompleted: completedIds.has(t.id),
     }));
   }
 
-  async submit(user: User, templateId: string, surveyData: any, score: number, timeTaken: number): Promise<SurveyResult> {
+  async submit(user: User, templateId: string, rawAnswers: any, timeTaken: number): Promise<SurveyResult> {
     // Check if already submitted
     const existing = await this.surveyResultRepository.findOne({
       where: { 
@@ -56,6 +69,42 @@ export class SurveysService {
     if (existing) {
       throw new Error('Bạn đã hoàn thành bộ đề này rồi.');
     }
+
+    const template = await this.surveyTemplateRepository.findOne({ where: { id: templateId } });
+    if (!template) {
+      throw new Error('Không tìm thấy bộ đề khảo sát.');
+    }
+
+    const questions = template.questions as any[];
+    let correctCount = 0;
+
+    const surveyData = questions.map(q => {
+      const userAnswer = rawAnswers[q.id];
+      let isCorrect = false;
+
+      if (q.type === 'checkbox') {
+        isCorrect = Array.isArray(userAnswer) && 
+                    Array.isArray(q.correctAnswer) && 
+                    userAnswer.length === q.correctAnswer.length &&
+                    userAnswer.every(val => q.correctAnswer.includes(val));
+      } else {
+        isCorrect = userAnswer === q.correctAnswer;
+      }
+
+      if (isCorrect) correctCount++;
+
+      return {
+        question: q.text,
+        type: q.type,
+        options: q.options,
+        answer: userAnswer || null,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+        isCorrect
+      };
+    });
+
+    const score = (correctCount / questions.length) * 100;
 
     const newResult = this.surveyResultRepository.create({
       user,
@@ -76,6 +125,11 @@ export class SurveysService {
     });
     return results.map(r => {
       const { surveyData, ...rest } = r;
+      if (rest.template) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { questions, ...tRest } = rest.template;
+        rest.template = tRest as SurveyTemplate;
+      }
       return rest as SurveyResult;
     });
   }
@@ -90,6 +144,11 @@ export class SurveysService {
     });
     return results.map(r => {
       const { surveyData, ...rest } = r;
+      if (rest.template) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { questions, ...tRest } = rest.template;
+        rest.template = tRest as SurveyTemplate;
+      }
       return rest as SurveyResult;
     });
   }

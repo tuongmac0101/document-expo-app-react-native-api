@@ -11,8 +11,8 @@ export class SurveysController {
   constructor(private readonly surveysService: SurveysService) { }
 
   @Post('submit')
-  async submit(@Req() req: any, @Body() body: { templateId: string; surveyData: any; score: number; timeTaken: number }) {
-    return this.surveysService.submit(req.user, body.templateId, body.surveyData, body.score, body.timeTaken);
+  async submit(@Req() req: any, @Body() body: { templateId: string; answers: any; timeTaken: number }) {
+    return this.surveysService.submit(req.user, body.templateId, body.answers, body.timeTaken);
   }
 
   @Post('templates')
